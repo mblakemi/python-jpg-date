@@ -27,5 +27,34 @@ For each photo in the 'photo' directory, the geographical distance to the photos
 
 See AtLocation.docx for more details.
 
+## FindClose.py
 
+This program is used to search multiple sub-folders of jpg files to determine if they are close to jpg file in a geo information folder. Note that the search is recursive so sub-folders of sub-folders of the path specified by 'path=' are searched.
+
+The searched folder path is defined by 'path=' in the program. The folder of jpg files with geo information is specified by 'gpath=' in the program. The maximum allowed distance from the geo information jpg files is .1 miles unless the name ends with @ and a distance in miles. For example, 
+Home.jpg would be matched with any jpg file within .1 miles of Home.jpg.
+Park@1.5.jpg would be matched with any jpg file within 1.5 miles of Park@1.5.jpg.
+
+Typical output would be:
+Dir: e:/Old Photo/65 Old Photo/2019-03-31 MarD Spain has 271
+No GPS:30  out count = 15137
+Madrid Thyssen has 204
+Madrid Reina Sofia has 67
+
+which shows that 204 photos in the 'e:/Old Photo/65 Old Photo/2019-03-31 MarD Spain has 271' folder were close to 'Madrid Thyssen.jpg' in the geo information folder and 67 photos in the 'e:/Old Photo/65 Old Photo/2019-03-31 MarD Spain has 271' folder were close to 'Madrid Reina Sofia.jpg' in the geo information folder.
+
+For a simple test, copy the ShortTest folder to the photos folder and run FindClose.py. The output should be:
+gpath= geophoto/
+path= photos
+pathfile= geophoto/Michigan@1.5.JPG
+name Michigan  rad= 1.5
+Michigan@1.5.JPG 42.2768472222 -83.7416388889
+Michigan ((0.0806582572458013, -0.7354934980094948, 0.6727135794109017), 1.5)
+
+
+Dir: photos\ShortTest has 1
+No GPS:1  out count = 1
+Michigan has 1
+
+The information from the gpath jpg files are displayed first. Finally, ShortTest has 1 match and the match is for the Michigan@???.jpg file.
 
