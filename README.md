@@ -1,7 +1,7 @@
 # python-jpg-date
 Python programs: 
 
-# DatetoName.py
+## DatetoName.py
 This program uses the date taken from the jpg file and adds it to the filename. It allows the standard sort to on filename to also sort by date. The format is:
 yyyy-mm-dddd hh x
 where hh is the hour in 24 hour notation and x is a-z based on the time the photo was taken during the hour. If more that 24 photos were taken, then hhxx is used where xx starts at aa, ab .... zz. This scheme allows up to 700 photos with unique date prefixes to be generated for each hour. The x or xx allows the photos to be sorted by date.
@@ -9,15 +9,15 @@ where hh is the hour in 24 hour notation and x is a-z based on the time the phot
 See 'Photo_Processing.docx' for more details
 
 
-# NametoJPG.py
+## NametoJPG.py
 This program reads the files from the input directory and generates new output file (in the 'out' directory) with the first 10 characters displayed on the photo in the upper left corner. If it is used after DatetoName.py, then the date is displayed on the photo. This is useful when lots of family photos are displayed on a photo frame that cycles through the photos. Note, the generated photos do not include JPG information (date, gps info etc.)
 
 See 'Photo_Processing.docx' for more details
 
-# Compress.py
+## Compress.py
 This program uses the same algorithm as NametoJPG.py but doesn't change the photo. The new photos are compressed jpg photo and do not include JPG information (date, gps info etc.). It uses CompressIn as the input directory and CompressOut as the output directory.
 
-#AtLocation.py
+## AtLocation.py
 
 Atlocation allows the location of a photo to be added to the name of photos. GEO information from jpg photos named for location (e.g. ScienceMuseum.jpg) is stored in the 'geophoto' folder and the names from the closest photo (within range - see below) are added after the end of the filenames in the 'photo' folder. If the filename already has a '@', the old location is discarded and replaced by the new location.
 
