@@ -13,6 +13,7 @@ import sys
 import re
 import datetime
 import math
+from collections import defaultdict
 
 """
 Set up gpath as the path to the geo information photos
@@ -22,22 +23,21 @@ or
 name@1.5.jpg
 for a radius of 1.5 miles
 
-Set up path as the path to the photos to rename
-Note, you should run DatetoName.py first to add dates
-
-2019-04-13 Changed to use PIL import for GPS info
-2019-04-14 Modified to not use subdirectory files in gpath
-and to also remove iPhone and Panasonic photo names
-
-2022-07-19 Modified for Python 3.9.12 and Python 2.7
+Set path for a directory of folders to check for each directory checked
+the number of jpg files within the limit distance of jpg files in the gpath
+directory are displayed after the directory name.
 """
 
 gpath = 'geophoto/'
-print ('gpath='+gpath)
+print 'gpath=',gpath
 
-path = 'photos/'
-print ('path='+path)
-
+path = 'e:/Old Photo/01 Art Museums/DC National Gallery 60 b DC/'
+#path = 'e:/Old Photo/01 Art Museums/'
+path = 'e:/Old Photo/'
+path = 'e:/Old Photo/65 Old Photo/'
+#path = 'e:/Old Photo/61 Old Photos - Kent Carol/'
+path = 'photos'
+print 'path=',path
 
 # based on https://gist.github.com/erans/983821
 
@@ -49,15 +49,10 @@ def _get_if_exist(data, key):
 
 def pill_convert_to_degress(values):
 #    print 'pil value=', values
-    if (bIsVer2):
-        d = float(values[0][0])/ float(values[0][1])
-        m = float(values[1][0])/ float(values[1][1])
-        s = float(values[2][0])/ float(values[2][1])
-    else:
-        d = float(values[0])
-        m = float(values[1])
-        s = float(values[2])
-    return d + (m / 60.0) + (s / 3600.0)      
+    d = float(values[0][0])/ float(values[0][1])
+    m = float(values[1][0])/ float(values[1][1])
+    s = float(values[2][0])/ float(values[2][1])
+    return d + (m / 60.0) + (s / 3600.0)
 
 def get_gpsinfo_location(pil_exif):
     lat = None
@@ -103,7 +98,9 @@ def getxyz(lat, long):
 count = 0
 dict = {}
 
-bIsVer2 = sys.version_info[0] == 2
+# make sure path exists
+if not os.path.exists(path):
+    print 'Path does not exist: ' + path
 
 #for (dirname, dirs, files) in os.walk(gpath):
 #    print ('DIR:', dirname)
@@ -113,12 +110,15 @@ for file in os.listdir(gpath):
 #        exif_data = get_exif_data(gpath + file)
 #        lat, long = get_exif_location(exif_data)
     pathfile = gpath + file
-    print ('pathfile='+pathfile)
+    print 'pathfile=',pathfile
     pil_exif = Image.open(pathfile)._getexif()           
     lat, long = get_gpsinfo_location(pil_exif)
+    # warn if Panasonic with no GPS data
+    if lat > 17056800 and lat == long:
+        lat = None
     if lat == None or long == None:
-        print ('No Geo info for: ' + pathfile)
-        print ('***** Exiting program ******')
+        print 'No Geo info for: ' + pathfile
+        print '***** Exiting program ******'
         raise Exception('exit')
         
     xyz = getxyz(lat, long)
@@ -137,16 +137,16 @@ for file in os.listdir(gpath):
             gname = file[:idot]
         else:
             gname = file
-    print ('name'+ gname+ ' rad='+ str(rad))
+    print 'name', gname, ' rad=', rad
 
     dict.update([(gname, (xyz, rad))])
     
 #        dt = str(exif_data['EXIF DateTimeOriginal'])  # might be different
 #        print 'dt= ', dt
-    print (file, lat,',', long)
+    print file, lat,long
         
-for key,val in dict.items():
-    print (key, val)
+for key,val in dict.iteritems():
+    print key, val
     
 def worlddist(xyz1, xyz2):
     dcos = xyz1[0] * xyz2[0] + xyz1[1] * xyz2[1] + xyz1[2] * xyz2[2]
@@ -154,89 +154,64 @@ def worlddist(xyz1, xyz2):
         dcos = 1.0
     dx = 3959 * math.acos(dcos)
     return dx
-        
+
+
+# raise Exception('SkipMainLoop')       
+print
+print
 
 for (dirname, dirs, files) in os.walk(path):
-    print ('DIR:', dirname)
+#    print ('DIR:', dirname)
+    icount = 0
+    freq = defaultdict(int)
+    none_count = 0
+    out_count = 0
     for file in files:
         if os.path.isdir(path + file):
             continue
-        if not file.lower().endswith('jpg'):
-            continue
+##        if not file.endswith('jpg'):
+##            continue
 #        exif_data = get_exif_data(path + file)
 #        lat, long = get_exif_location(exif_data)
-        oldpathname = os.path.join(dirname, file)
+        # skip non .jpg files
+        if not file.lower().endswith('jpg'):
+            continue
         
-        try:
+        oldpathname = os.path.join(dirname, file)
+
+        try:        
             pil_exif = Image.open(oldpathname)._getexif()           
             lat, long = get_gpsinfo_location(pil_exif)
         except IOError:
-            print ('Cannot open image for: ' + oldpathname)
-            continue
-        except AttributeError:
-            print ('Cannot get GEO info for: ' + oldpathname)
-            continue            
+            print 'Error opening:' + oldpathname
+            lat = None
         gname = 'Unknown'
         dxclose = 1e8
         # sometimes iPhone doesn't add GPS
-        if lat != None:
+        if lat == None:
+            none_count += 1
+        else:
             pxyz = getxyz(lat, long)
             # check dict for closest location within limit
-            for key,val in dict.items():
+            for key,val in dict.iteritems():
                 wdx = worlddist(pxyz, val[0])
-                if (wdx < dxclose):
-                    # would be new close
-                    if val[1]< 0.0 or wdx < val[1]:
-                        # update closest value
-                        gname = key
-                        dxclose = wdx
-                        #print 'gname, wdx', gname, wdx
+                # would be new close
+#                if wdx < val[1]:
+                if wdx < .5:
+                    # update closest value
+                    freq[key] += 1
+                    icount += 1
+#                    print str(wdx) + ' found ' + oldpathname
+                else:
+                    out_count += 1
+
+    if icount > 0:
+        print 'Dir: ' + dirname + ' has ' + str(icount)
+        print 'No GPS:' + str(none_count) + '  out count = ' + str(out_count)
+        for key,val in freq.iteritems():
+            print key + ' has ' + str(val)
+        print
         
-        # should have name to update this photo
-        if gname == 'Unknown':
-            print (file, ' is in ', gname)
-        
-        oldfile = file
-        iplace = oldfile.find('@')
-        if (iplace >=0):
-            newfile = oldfile[:iplace] + '@' + gname + '.jpg'
-        else:
-            # just strip off .jpg
-            ijpg = oldfile.lower().find('.jpg')
-            if ijpg >= 0:
-                newfile = oldfile[:ijpg] + '@' + gname + '.jpg'
-            else:
-                print ('*** Not JPG so not changed:' + oldfile)
-                continue
-        newpathfile = os.path.join(dirname, newfile)
-            
-        os.rename(oldpathname, newpathfile)
-        
- #### ------ now remove original iPhone or Panasonic photo id       
-count = 0
-print ('Removing original iPhone IMG_####')
-for (dirname, dirs, files) in os.walk(path):
-    print ('DIR:', dirname)
-    for file in files:
-        if file.upper().endswith('PNG'):
-            continue
-##        if not file.endswith('jpg'):
-##            continue
-#        print(file)
-#        found = re.findall('(IMG_\d\d\d\d)', file)
-        newstr = None
-        found = re.search('(IMG_\d\d\d\d)', file)
-        if found == None:
-            found = re.search('(P\d+)', file)
-        if found != None:
-            istart = found.start()
-            if file[istart-1]==' ' and file[istart-2]== ' ':
-                istart = istart - 1;
-            newstr = file[:istart] + file[found.end():]
-        if newstr != None:
-            count += 1
- #           print (newstr)
-            oldpathname = os.path.join(dirname, file)
-            newpathname = os.path.join(dirname, newstr)
-            os.rename(oldpathname, newpathname)
-print (str(count)+' Renamed')
+
+
+

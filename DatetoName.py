@@ -5,6 +5,7 @@ import re
 from datetime import timedelta, datetime
 
 # 2017-10-18 AVI and MTS converted like MOV with last modified date
+# 2021-02-22 PNG files converted like MOV with last modified date
 
 # **** Notes 2018 *****
 # For large Old Photo files, move to E:/Temp/Photos and use this
@@ -13,11 +14,11 @@ from datetime import timedelta, datetime
 # to this folder.
 # *** you may also want to delete .aae files if any show up
 # *** .png files are NOT renamed, you can do this manually
+# 7/16/2022 Rename 'JPEG' and 'jpeg' files as 'JPG'
 
 # path = 'photos\\in\\'
 path = 'E:\\Temp\\Photos'
 path = 'photos\\'
-path = 'in_name'
 # path = 'C:\\Archive\\2017'
 nPanaOffset = 0 # hour offset for panasonic camera 7 early germany
 if nPanaOffset != 0:
@@ -107,12 +108,15 @@ for (dirname, dirs, files) in os.walk(path):
             continue
         
         #handle Movies using modified time
+        if filename.endswith('.png'):
+            filename = filename[:-3]+'PNG'
         if filename.endswith('.mov'):
             filename = filename[:-3]+'MOV'
-        if filename.endswith('.MOV'):
+        if filename.endswith('.MOV') or filename.endswith('.PNG'):
             oldpathname = os.path.join(dirname, filename)
             # sdate = getFileDateHourMin(oldpathname)
-            sdate = getFileDateTime(oldpathname)          
+            sdate = getFileDateTime(oldpathname)
+            print ('sdate ='+ sdate)
             newname = sdate + ' ' + filename
             newpathname = os.path.join(dirname, newname)
             os.rename(oldpathname, newpathname)
@@ -146,7 +150,16 @@ for (dirname, dirs, files) in os.walk(path):
             mcount += 1
             continue     
                 
-        # now handle jpg or .JPG                            
+        # now handle jpg or .JPG
+        # Rename jpeg files to JPG
+        if (filename.endswith('.JPEG') or filename.endswith('.jpeg')):
+            tempFileName = filename[:-4]+'JPG'
+            oldpathname = os.path.join(dirname, filename)
+            newpathname = os.path.join(dirname, tempFileName)
+            os.rename(oldpathname, newpathname)
+#            print("old, new ", oldpathname, ", ", newpathname)
+            filename = tempFileName
+                               
         if filename.endswith('.jpg'):
             filename = filename[:-3]+'JPG'
         if not filename.endswith('.JPG'):
@@ -184,10 +197,11 @@ for (dirname, dirs, files) in os.walk(path):
     files.sort()
     for filename in files:
         if filename.endswith('.jpg'):
-            filename = filename[:-3]+'JPG'           
-        # skip if not start 19 or 20
-        if not filename.endswith('.JPG') and not filename.endswith('.MOV'):
+            filename = filename[:-3]+'JPG'
+        # skip if not JPG, MOV or PNG
+        if not filename.endswith('.JPG') and not filename.endswith('.MOV') and not filename.endswith('.PNG'):
             continue
+        # skip if not start 19 or 20
         if not filename.startswith('19') and not filename.startswith('20'):
             continue
         #check for old format and change to new
