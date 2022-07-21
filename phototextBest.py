@@ -4,12 +4,20 @@
 #17-04-13 Single color (255,0,255)
 #17-04-13 Recursive process from sIndir to sOutDir
 #19-04-12 Added Rotate option based on EXIF info
+#22-06-20 added ImageFile.LOAD_TRUNCATED_IMAGES = True
+#   to handle broken data stream when reading image file
+#22-07-20 Updated for Python 3.9.12
 
-import os,sys
+import os
 
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
+# these lines fix, broken data stream when reading image file
+# but image is not correctly handled
+#from PIL import ImageFile
+#ImageFile.LOAD_TRUNCATED_IMAGES = True
+#NOTE if you get this error, then rotate the image with windows viewer.
 bDebugReport = False
 
 # Note either use 'out' as sOutDir and the parent directories to
@@ -87,24 +95,26 @@ def add_photo_text(in_dir_name, out_dir_name, in_name):
   iRotate = imageRotation(sInFileName)
   if iRotate == 6:
     transposed  = img.transpose(Image.ROTATE_270)
-    print 'Rotated 270'
+    print ('Rotated 270')
     img = transposed
   elif iRotate == 3:
     transposed  = img.transpose(Image.ROTATE_180)
-    print 'Rotated 180'
+    print ('Rotated 180')
     img = transposed
   elif iRotate == 8:
     transposed  = img.transpose(Image.ROTATE_90)
-    print 'Rotated 90'
+    print ('Rotated 90')
     img = transposed
   elif iRotate != 1:
-    print '***** NOT RECOGNIZED ROTATION ***** = ', iRotate
+    print ('***** NOT RECOGNIZED ROTATION ***** = ', iRotate)
   width, height = img.size
+#  draw = ImageDraw.Draw(img)
   try:
       draw = ImageDraw.Draw(img)
-  except:
+  except IOError as error_text:
       print ('**********')
       print ('Could not Draw: ' + sInFileName)
+      print(error_text)
       print ('**********')
       return
   # font = ImageFont.truetype(<font-file>, <font-size>)
